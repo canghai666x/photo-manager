@@ -1,7 +1,7 @@
 import pytest
 import json
 from pathlib import Path
-from src.core.utils.config import save_config, load_config, find_config
+from src.core.utils import save_config, load_config, find_config
 
 #保存和加载配置的测试
 def test_save_and_load_config(tmp_path):
