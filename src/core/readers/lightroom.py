@@ -65,29 +65,32 @@ class LightroomReader:
                 af.baseName as filename,
                 ai.rating,
                 af.extension as file_type,
-                af.relativePath as file_path,
-                af.fileSize as file_size,
+                COALESCE(rf.absolutePath,'') || COALESCE(fo.pathFromRoot,'')||
+                '/'||af.baseName || COALESCE('.'||af.extension,'') as file_path,
+               
                 CASE
                     WHEN af.extension IN ('ARW','CR2','NEF','RAF') THEN 1
                     ELSE 0
                 END as is_raw
             FROM Adobe_images ai
             JOIN AgLibraryFile af ON ai.rootFile = af.id_local
+            JOIN AgLibraryFolder fo ON af.folder = fo.id_local
+            JOIN AgLibraryRootFolder rf ON fo.rootFolder = rf.id_local
             WHERE ai.rating = ?
             ORDER BY af.idx_filename
         """
         cursor = self.connection.execute(query,(rating,))
         photos=[]
-        for row in cursor.fetchall:
+        for row in cursor.fetchall():
             photo = Photo(
                 id=row['id'],
                 file_id=row['file_id'],
                 filename=row['filename'],
                 rating=row['rating'],
                 capture_date=datetime.now(), #暂不处理拍摄日期
-                file_path=row['relativePath'], 
+                file_path=row['file_path'], 
                 file_type=row['file_type'],
-                file_size=row['file_size'] or 0, #有些文件可能没有大小信息
+                file_size= 0, #有些文件可能没有大小信息
                 is_raw=bool(row['is_raw'])  
             )
             photos.append(photo)
@@ -112,29 +115,32 @@ class LightroomReader:
                 af.baseName as filename,
                 ai.rating,
                 af.extension as file_type,
-                af.relativePath as file_path,
-                af.fileSize as file_size,
+                COALESCE(rf.absolutePath,'') || COALESCE(fo.pathFromRoot,'')||
+                '/'||af.baseName || COALESCE('.'||af.extension,'') as file_path,
+                
                 CASE
                     WHEN af.extension IN ('ARW','CR2','NEF','RAF') THEN 1
                     ELSE 0
                 END as is_raw
             FROM Adobe_images ai
             JOIN AgLibraryFile af ON ai.rootFile = af.id_local
+            JOIN AgLibraryFolder fo ON af.folder = fo.id_local
+            JOIN AgLibraryRootFolder rf ON fo.rootFolder = rf.id_local
             WHERE ai.rating BETWEEN ? AND ?
             ORDER BY af.idx_filename
         """
         cursor = self.connection.execute(query,(min_rating, max_rating))
         photos=[]
-        for row in cursor.fetchall:
+        for row in cursor.fetchall():
             photo = Photo(
                 id=row['id'],
                 file_id=row['file_id'],
                 filename=row['filename'],
                 rating=row['rating'],
                 capture_date=datetime.now(), #暂不处理拍摄日期
-                file_path=row['relativePath'], 
+                file_path=row['file_path'], 
                 file_type=row['file_type'],
-                file_size=row['file_size'] or 0, #有些文件可能没有大小信息
+                file_size= 0, #有些文件可能没有大小信息
                 is_raw=bool(row['is_raw'])  
             )
             photos.append(photo)
