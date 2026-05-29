@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from core.utils.config import load_config, find_config
+from src.core.utils.config import load_config, find_config, save_config
 from src.core.readers.lightroom import LightroomReader
 from src.core.engines.query import QueryEngine
 
@@ -26,10 +26,14 @@ def resolve_catalog(args):
             print(f"{idx}. {path}")
         choice = input("请输入要使用的目录编号(或按Enter跳过): ")
         if choice.isdigit() and 1 <= int(choice) <= len(found):
+            save_config(found[int(choice)-1])  # 保存选择到配置文件
             return found[int(choice)-1]
     # 最后提示用户输入
     print("未找到有效的Lightroom目录文件,请输入lrcat路径")
-    return input(">").strip()
+    user_input = input(">").strip()
+    if user_input and Path(user_input).exists():
+        save_config(user_input)  # 保存用户输入到配置文件
+        return user_input
 
 def cmd_scan(args):
     """扫描目录,显示评分分布"""
