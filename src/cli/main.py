@@ -1,9 +1,12 @@
 import argparse
+import json
+from datetime import datetime
 from pathlib import Path
 from src.core.utils.config import load_config, find_config, save_config
 from src.core.readers.lightroom import LightroomReader
 from src.core.engines.query import QueryEngine
 from src.core.operators.file_ops import FileOperator
+
 
 def resolve_catalog(args):
     """按照优先级获取catalog路径:命令行>配置文件>自动发现"""
@@ -131,6 +134,55 @@ def cmd_move(args):
 
 def cmd_to_delete(args):
     """移动照片到待删除区域"""
+    reader = LightroomReader(str(resolve_catalog(args)))
+    engine = QueryEngine(reader)
+    1.查询照片  
+    min_rating, max_rating = parse_rating_filter(args.rating)
+    photos = engine.query_by_rating(min_rating, max_rating)
+    if args.type:
+        photos = engine.query_by_file_type(photos, args.type)
+    if not photos:
+        print("没有符合条件的照片")
+        reader.close()
+        return
+    # 2.确认
+    print(f"\n将移动{len(photos)}张照片, 确认移动到 {args.dest}? (y/n)")
+    confirm = input(">").strip().lower()
+    if confirm != "y":
+        print("操作已取消")
+        reader.close()
+        return
+    #3.记录删除
+    dest = Path(args.dest)
+    dest.mkdir(parents=True, exist_ok=True)
+    index = {
+        "created_at": datetime.now().isoformat(),
+        "source_catalog": str(resolve_catalog(args)),
+        "photos":[
+            {"filename":p.filename,"file_path":p.file_path} 
+           for p in photos
+        ]
+    }
+    index_path = dest / ".restore_index.json"
+    with open(index_path, "w") as f:
+        json.dump(index,f,indent=2,ensure_ascii=False)
+    
+    # 4.执行移动
+    dest_path = Path(args.dest)
+    operator = FileOperator()
+    moved = FileOperator.move_photos(photos, dest_path)
+
+    #5.输出
+    print(f"\n移动照片完成")
+    print(f"{'='*30}")
+    print(f"移动数量: {len(moved)}张")
+    print(f"目标目录: {dest_path}")
+
+    if operator.errors:
+        print(f"\n部分文件移动失败:")
+        for error in operator.errors:
+            print(f"- {error}")
+    reader.close()
     pass
 
 def cmd_restore(args):
