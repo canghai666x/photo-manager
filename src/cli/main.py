@@ -3,6 +3,7 @@ from pathlib import Path
 from src.core.utils.config import load_config, find_config, save_config
 from src.core.readers.lightroom import LightroomReader
 from src.core.engines.query import QueryEngine
+from src.core.operators.file_ops import FileOperator
 
 def resolve_catalog(args):
     """按照优先级获取catalog路径:命令行>配置文件>自动发现"""
@@ -50,28 +51,32 @@ def cmd_scan(args):
         stars = "🌟" * rating
         print(f" {stars} ({rating}星): {len(photos)}张")
 
+def parse_rating_filter(rating_str):
+    """解析评分过滤字符串,支持单值(=4),范围(3..5),或比较(>=4)"""
+    if not rating_str:
+        return 1, 5  # 默认查询所有评分
+
+    if ".." in rating_str:
+        min_rating, max_rating = map(int, rating_str.split(".."))
+    elif rating_str.startswith(">="):
+        min_rating = int(rating_str[2:])
+        max_rating = 5
+    elif rating_str.startswith("<="):
+        min_rating = 0
+        max_rating = int(rating_str[2:])
+    elif rating_str.startswith("="):
+        min_rating = max_rating = int(rating_str[1:])
+    else:
+        min_rating = max_rating = int(rating_str)
+    return min_rating, max_rating
+
 def cmd_list(args):
     """按照条件列出照片"""
     catalog_path = resolve_catalog(args)
     reader = LightroomReader(str(catalog_path))
     engine = QueryEngine(reader)
 
-    if args.rating:
-        rating_filter = args.rating
-        if ".." in rating_filter:
-            min_rating, max_rating = map(int, rating_filter.split(".."))
-        elif rating_filter.startswith(">="):
-            min_rating = int(rating_filter[2:])
-            max_rating = 5
-        elif rating_filter.startswith("<="):
-            min_rating = 0
-            max_rating = int(rating_filter[2:])
-        elif rating_filter.startswith("="):
-            min_rating = max_rating = int(rating_filter[1:])
-        else:
-            min_rating = max_rating = int(rating_filter)
-    else:
-        min_rating, max_rating = 1, 5
+    min_rating, max_rating = parse_rating_filter(args.rating)
 
     photos = engine.query_by_rating(min_rating, max_rating)
 
@@ -88,7 +93,41 @@ def cmd_list(args):
 
 def cmd_move(args):
     """移动照片到指定目录"""
-    pass
+    reader = LightroomReader(str(resolve_catalog(args)))
+    engine = QueryEngine(reader)
+    1.查询照片  
+    min_rating, max_rating = parse_rating_filter(args.rating)
+    photos = engine.query_by_rating(min_rating, max_rating)
+    if args.type:
+        photos = engine.query_by_file_type(photos, args.type)
+    if not photos:
+        print("没有符合条件的照片")
+        reader.close()
+        return
+    # 2.确认
+    print(f"\n将移动{len(photos)}张照片, 确认移动到 {args.dest}? (y/n)")
+    confirm = input(">").strip().lower()
+    if confirm != "y":
+        print("操作已取消")
+        reader.close()
+        return
+    # 3.执行移动
+    dest_path = Path(args.dest)
+    operator = FileOperator()
+    moved = FileOperator.move_photos(photos, dest_path)
+
+    #4.输出
+    print(f"\n移动照片完成")
+    print(f"{'='*30}")
+    print(f"移动数量: {len(moved)}张")
+    print(f"目标目录: {dest_path}")
+
+    if operator.errors:
+        print(f"\n部分文件移动失败:")
+        for error in operator.errors:
+            print(f"- {error}")
+    reader.close()
+    
 
 def cmd_to_delete(args):
     """移动照片到待删除区域"""
