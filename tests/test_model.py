@@ -25,7 +25,9 @@ def test_photo_creation():
 
     def test_rating_stars():
         photo = Photo(
-           ...,
+            id=1,
+            file_id=100,
+            filename="DSC00121.ARW",
             rating=3,
             capture_date=datetime(2023, 1, 1, 12, 0, 0),
             file_path="/photos/DSC00121.ARW",
