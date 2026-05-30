@@ -4,7 +4,7 @@ from pathlib import Path
 CONFIG_DIR = Path.home() / ".photo-manager"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
-def save_config(catalog_path: str,dest_dir: str = None) -> None:
+def save_config(catalog_path: str,dest_dir: str = None,last_deleted_dir:str=None) -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     existing = load_config()
     existing["catalog_path"] = catalog_path
