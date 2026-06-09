@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from pathlib import Path
 from src.core.operators.file_ops import FileOperator
@@ -18,8 +20,8 @@ def temp_dirs(tmp_path):
 def sample_photos(temp_dirs):
     """创建测试用的Photo对象列表"""
     return [
-        Photo(id=1,file_id=1, filename="test1.ARW",file_size=100,capture_date="2023-01-01", file_path=str(temp_dirs["source"] / "test1.ARW"), rating=5, file_type="ARW", is_raw=True),
-        Photo(id=2,file_id=2, filename="test2.ARW",file_size=100,capture_date="2023-01-01", file_path=str(temp_dirs["source"] / "test2.ARW"), rating=4, file_type="ARW", is_raw=True)
+        Photo(id=1,file_id=1, filename="test1.ARW",file_size=100,capture_date=datetime.strptime("2023-01-01", "%Y-%m-%d"), file_path=str(temp_dirs["source"] / "test1.ARW"), rating=5, file_type="ARW", is_raw=True),
+        Photo(id=2,file_id=2, filename="test2.ARW",file_size=100,capture_date=datetime.strptime("2023-01-01", "%Y-%m-%d"), file_path=str(temp_dirs["source"] / "test2.ARW"), rating=4, file_type="ARW", is_raw=True)
     ]
 
 def test_move_photos(sample_photos,temp_dirs):
