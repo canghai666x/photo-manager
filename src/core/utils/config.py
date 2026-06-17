@@ -10,6 +10,8 @@ def save_config(catalog_path: str,dest_dir: str = None,last_deleted_dir:str=None
     existing["catalog_path"] = catalog_path
     if dest_dir:
         existing["dest_dir"] = dest_dir
+    if last_deleted_dir:
+        existing["last_deleted_dir"] = last_deleted_dir
     
     with open(CONFIG_FILE, "w") as f:
         json.dump(existing, f, indent=2)
