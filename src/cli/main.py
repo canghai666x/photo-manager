@@ -99,7 +99,7 @@ def cmd_move(args):
     """移动照片到指定目录"""
     reader = LightroomReader(str(resolve_catalog(args)))
     engine = QueryEngine(reader)
-    1.查询照片  
+    #1.查询照片  
     min_rating, max_rating = parse_rating_filter(args.rating)
     photos = engine.query_by_rating(min_rating, max_rating)
     if args.type:
@@ -120,7 +120,7 @@ def cmd_move(args):
     save_config(str(resolve_catalog(args)), dest_dir=dest)  # 保存最后目标目录到配置文件
     dest = str(Path(dest).expanduser())
     operator = FileOperator()
-    moved = FileOperator.move_photos(photos, dest)
+    moved = operator.move_photos(photos, dest)
 
     #4.输出
     print(f"\n移动照片完成")

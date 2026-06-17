@@ -6,11 +6,9 @@ from src.core.engines.query import QueryEngine
 TEST_CATALOG=Path.home() / "Pictures" / "Lightroom" / "Lightroom Catalog.lrcat"
 
 @pytest.fixture
-def engine():
+def engine(temp_lrcat):
     """测试用的LightroomReader实例"""
-    if not TEST_CATALOG.exists():
-        pytest.skip(f"测试目录文件不存在: {TEST_CATALOG}")
-    reader = LightroomReader(str(TEST_CATALOG))
+    reader = LightroomReader(str(temp_lrcat))
     yield QueryEngine(reader)
     reader.close()
 
